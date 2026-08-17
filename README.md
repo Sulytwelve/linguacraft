@@ -10,6 +10,9 @@
 ## ✨ 核心特性
 
 - ⚡ **纯客户端 Mod**：无需服务端安装，不依赖额外 Kotlin 库，零冗余。
+- 🔍 **按住 Tab 查看原文 (Hold Tab to Peek Original)** *(v1.0.1 新增)*：
+  - 默认鼠标悬停在物品上时**直接显示中文翻译**。
+  - **按住 `Tab`（或 `Left Alt`）键**立即动态切换回**英文字符串原文**，松开立刻还原译文，丝滑无卡顿。
 - 🤖 **DeepSeek Responses API 原生支持**：
   - 默认采用最新的 `deepseek-v4-flash` 模型，毫秒级响应。
   - 固化标准化英文 Harness 系统提示词，**100% 触发 DeepSeek 上下文硬盘缓存**，减少高达 ~90% 输入 Token 成本。
@@ -65,14 +68,16 @@
   "enabled": true,
   "translateTooltips": true,
   "translateTabMenu": true,
+  "holdTabToShowOriginal": true,
+  "showHintLine": true,
   "showOriginalAndTranslation": false,
   "prefix": "[译] "
 }
 ```
 
-> **可选模型**：
-> - `deepseek-v4-flash`（极速、低成本，推荐游戏实时翻译）
-> - `deepseek-v4-pro`（深度上下文与复杂长文本）
+> **参数说明**：
+> - `holdTabToShowOriginal`：按住 Tab（或 Alt）键时临时显示原文（默认 `true`）。
+> - `showHintLine`：是否在 Tooltip 底部显示 `[按住 Tab 查看原文]` 提示行（默认 `true`）。
 
 ### 方案 2：DeepL API
 
@@ -84,23 +89,8 @@
   "enabled": true,
   "translateTooltips": true,
   "translateTabMenu": true,
-  "showOriginalAndTranslation": false,
-  "prefix": "[译] "
-}
-```
-
-### 方案 3：自定义 OpenAI 兼容接口 / 本地 Ollama
-
-```json
-{
-  "provider": "OPENAI_CHAT",
-  "apiKey": "ollama",
-  "apiEndpoint": "http://localhost:11434/v1/chat/completions",
-  "model": "qwen2.5:7b",
-  "targetLanguage": "ZH",
-  "enabled": true,
-  "translateTooltips": true,
-  "translateTabMenu": true,
+  "holdTabToShowOriginal": true,
+  "showHintLine": true,
   "showOriginalAndTranslation": false,
   "prefix": "[译] "
 }
@@ -110,26 +100,21 @@
 
 ## ⌨️ 快捷键
 
-- 默认按键：**`F8`**（可在游戏“选项 -> 控制 -> 按键绑定 -> LinguaCraft 翻译”中自由更改）
-- 触发效果：Action Bar 显示 `§b[LinguaCraft] §r翻译功能 §a已开启 / §c已关闭`
+- **`F8`**：全局翻译功能开启 / 关闭切换。
+- **按住 `Tab` 或 `Left Alt`**：物品悬停时临时查看原始未翻译文本。
 
 ---
 
 ## 🏗️ 开发与构建
 
-### 1. 启动测试客户端
 ```bash
+# 启动测试客户端
 ./gradlew runClient
-```
 
-### 2. 编译打包 Mod JAR
-```bash
+# 编译打包
 ./gradlew build
 ```
-编译产物位于：
-- `build/libs/linguacraft-1.0.0.jar`
-
-将生成的 `.jar` 文件直接放入客户端的 `.minecraft/mods/` 文件夹即可。
+编译产物位于：`build/libs/linguacraft-1.0.1.jar`
 
 ---
 

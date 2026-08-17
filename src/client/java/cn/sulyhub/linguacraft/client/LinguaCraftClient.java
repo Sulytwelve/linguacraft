@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
@@ -26,7 +27,7 @@ public class LinguaCraftClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
-		LOGGER.info("Initializing LinguaCraft Client...");
+		LOGGER.info("Initializing LinguaCraft Client v1.0.1...");
 
 		// 1. Load config
 		LinguaCraftConfig config = LinguaCraftConfig.getInstance();
@@ -36,16 +37,26 @@ public class LinguaCraftClient implements ClientModInitializer {
 		// 2. Initialize TranslationManager
 		TranslationManager manager = TranslationManager.getInstance();
 
-		// 3. Register Tooltip Translation Callback (with Batch Aggregation)
+		// 3. Register Tooltip Translation Callback (with Hold-Tab-to-Peek feature)
 		ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> {
 			LinguaCraftConfig currentConfig = LinguaCraftConfig.getInstance();
 			if (!currentConfig.enabled || !currentConfig.translateTooltips) {
 				return;
 			}
 
-			List<String> uncachedTexts = new ArrayList<>();
+			// Check if Tab (or Left Alt) key is being held down
+			boolean isTabHeld = false;
+			try {
+				Minecraft mc = Minecraft.getInstance();
+				if (mc.getWindow() != null) {
+					isTabHeld = InputConstants.isKeyDown(mc.getWindow(), InputConstants.KEY_TAB)
+							 || InputConstants.isKeyDown(mc.getWindow(), InputConstants.KEY_LALT);
+				}
+			} catch (Exception ignored) {}
 
-			// First pass: apply cached translations and collect missing lines
+			List<String> uncachedTexts = new ArrayList<>();
+			boolean hasTranslatableContent = false;
+
 			for (int i = 0; i < lines.size(); i++) {
 				Component original = lines.get(i);
 				String plain = original.getString();
@@ -53,11 +64,32 @@ public class LinguaCraftClient implements ClientModInitializer {
 					continue;
 				}
 
-				String translated = manager.getOrRequest(plain, null);
-				if (!translated.equals(plain)) {
-					lines.set(i, Component.literal(translated).withStyle(original.getStyle()));
+				hasTranslatableContent = true;
+
+				if (isTabHeld && currentConfig.holdTabToShowOriginal) {
+					// When holding Tab: show original text as-is, but collect for prefetching
+					String clean = TranslationManager.stripFormatting(plain).trim();
+					String cacheKey = currentConfig.provider.name() + ":" + currentConfig.targetLanguage + ":" + clean;
+					if (!manager.getCache().contains(cacheKey)) {
+						uncachedTexts.add(plain);
+					}
 				} else {
-					uncachedTexts.add(plain);
+					// Default: replace with translated text if available
+					String translated = manager.getOrRequest(plain, null);
+					if (!translated.equals(plain)) {
+						lines.set(i, Component.literal(translated).withStyle(original.getStyle()));
+					} else {
+						uncachedTexts.add(plain);
+					}
+				}
+			}
+
+			// Add interactive hint line at the bottom if item has translatable lines
+			if (hasTranslatableContent && currentConfig.showHintLine && currentConfig.holdTabToShowOriginal) {
+				if (isTabHeld) {
+					lines.add(Component.literal("§8[松开 Tab 查看译文]"));
+				} else {
+					lines.add(Component.literal("§8[按住 Tab 查看原文]"));
 				}
 			}
 
@@ -130,6 +162,7 @@ public class LinguaCraftClient implements ClientModInitializer {
 										context.getSource().sendFeedback(Component.literal("§f当前提供商: §e" + cfg.provider));
 										context.getSource().sendFeedback(Component.literal("§f当前模型: §e" + cfg.model));
 										context.getSource().sendFeedback(Component.literal("§fAPI Key: " + keyStatus));
+										context.getSource().sendFeedback(Component.literal("§f按住 Tab 查看原文: §e" + (cfg.holdTabToShowOriginal ? "已启用" : "未启用")));
 										context.getSource().sendFeedback(Component.literal("§f本地缓存条数: §e" + manager.getCache().size() + " 条"));
 										context.getSource().sendFeedback(Component.literal("§b============================="));
 										return 1;
