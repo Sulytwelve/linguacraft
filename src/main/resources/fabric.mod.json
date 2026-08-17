@@ -1,0 +1,31 @@
+{
+	"schemaVersion": 1,
+	"id": "linguacraft",
+	"version": "${version}",
+	"name": "LinguaCraft",
+	"description": "Client-side real-time translation mod for item tooltips and Tab list menus using DeepL API.",
+	"authors": [
+		"suly"
+	],
+	"contact": {},
+	"license": "MIT",
+	"icon": "assets/linguacraft/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"cn.sulyhub.linguacraft.client.LinguaCraftClient"
+		]
+	},
+	"mixins": [
+		{
+			"config": "linguacraft.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~26.1.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
